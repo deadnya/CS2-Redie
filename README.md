@@ -1,5 +1,9 @@
 # cs2-redie
-**a plugin that allows players to go in Redie/Ghost mode**
+**A plugin that allows players to go in Redie/Ghost mode**
+
+**This version is based on [excludera](https://github.com/exkludera)'s [redie](https://github.com/exkludera/cs2-redie) and [teleports](https://github.com/exkludera/cs2-teleports) plugins and allows ghosts to use map teleports. It's meant do be used on CS2 Combat Surf server.**
+
+**Also ghost is not dying when exiting the ghost mode, it just quickly rejoins the team**
 
 <br>
 
@@ -17,17 +21,7 @@
 >player in redie still makes walking/jumping sounds (would be nice if anyone knows how to fix that)
 > 
 >player in redie can pickup defuse kits
-
-this plugin is bad and should probably not be used💀
+>
+>player in redie can do various niche things like opening ski_3's jail
 
 <br>
-
-**credits:**
-
->[ManifestManah/NoBlock](https://github.com/ManifestManah/NoBlock)
->
-> inspired by [[CS:GO][Surf] Redie by Pyro_](https://forums.alliedmods.net/showthread.php?p=2198357)
-
-<img src="https://github.com/user-attachments/assets/53e486cc-8da4-45ab-bc6e-eb38145aba36" height="200px"> <br>
-
-<br> <a href='https://ko-fi.com/exkludera' target='_blank'><img src='https://cdn.ko-fi.com/cdn/kofi5.png' height='48px' alt='Buy Me a Coffee at ko-fi.com' /></a>
