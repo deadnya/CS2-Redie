@@ -64,10 +64,12 @@ public partial class Plugin : BasePlugin, IPluginConfig<Config>
             {
                 player.RemoveWeapons();
                 HidePlayer(player, true);
+                
 
                 AddTimer(0.0f, () => {
                     playerPawn.LifeState = (byte)LifeState_t.LIFE_DYING;
-                    playerPawn.Collision.CollisionGroup = 8;
+                    playerPawn.Collision.CollisionAttribute.CollisionGroup = (byte)CollisionGroup.COLLISION_GROUP_DISSOLVING;
+                    playerPawn.Collision.CollisionGroup = (byte)CollisionGroup.COLLISION_GROUP_DISSOLVING;
                 });
             });
 
@@ -78,8 +80,18 @@ public partial class Plugin : BasePlugin, IPluginConfig<Config>
         else if (RediePlayers.Contains(player.Slot))
         {
             RediePlayers.Remove(player.Slot);
-            player.PlayerPawn.Value!.LifeState = (byte)LifeState_t.LIFE_ALIVE;
-            player.CommitSuicide(false, true);
+
+            if (player.PlayerPawn.Value!.TeamNum == (byte)CsTeam.Terrorist)
+            {
+                player.ChangeTeam(CsTeam.CounterTerrorist);
+                player.ChangeTeam(CsTeam.Terrorist);
+            }
+
+            else if (player.PlayerPawn.Value!.TeamNum == (byte)CsTeam.CounterTerrorist)
+            {
+                player.ChangeTeam(CsTeam.Terrorist);
+                player.ChangeTeam(CsTeam.CounterTerrorist);
+            }
 
             if (Config.Messages)
                 player.PrintToChat($"{Config.Prefix} {Config.Message_UnRedie}");

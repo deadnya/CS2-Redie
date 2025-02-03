@@ -1,7 +1,10 @@
 ﻿using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Modules.Entities.Constants;
 using CounterStrikeSharp.API.Modules.Memory;
 using CounterStrikeSharp.API.Modules.Memory.DynamicFunctions;
+using CounterStrikeSharp.API.Modules.Utils;
+using System;
 using System.Drawing;
 using System.Runtime.InteropServices;
 
@@ -14,8 +17,7 @@ public partial class Plugin : BasePlugin, IPluginConfig<Config>
         RegisterEventHandler<EventPlayerTeam>(EventPlayerTeam);
 
         VirtualFunctions.CCSPlayer_WeaponServices_CanUseFunc.Hook(OnCanUse, HookMode.Pre);
-
-        HookEntityOutput("trigger_multiple", "OnStartTouch", OnStartTouch, HookMode.Pre);
+        VirtualFunctions.CBaseTrigger_StartTouchFunc.Hook(TeleportHandler, HookMode.Pre);
     }
 
     public void UnregisterEvents()
@@ -25,54 +27,10 @@ public partial class Plugin : BasePlugin, IPluginConfig<Config>
         DeregisterEventHandler<EventPlayerTeam>(EventPlayerTeam);
 
         VirtualFunctions.CCSPlayer_WeaponServices_CanUseFunc.Unhook(OnCanUse, HookMode.Pre);
-
-        UnhookEntityOutput("trigger_multiple", "OnStartTouch", OnStartTouch, HookMode.Pre);
+        VirtualFunctions.CBaseTrigger_StartTouchFunc.Unhook(TeleportHandler, HookMode.Pre);
     }
 
-    public Dictionary<CCSPlayerController, List<TeleportPair>> playerCooldowns = new Dictionary<CCSPlayerController, List<TeleportPair>>();
-
-    HookResult OnStartTouch(CEntityIOOutput output, string name, CEntityInstance activator, CEntityInstance caller, CVariant value, float delay)
-    {
-        if (activator.DesignerName != "player") return HookResult.Continue;
-
-        var pawn = activator.As<CCSPlayerPawn>();
-
-        if (!pawn.IsValid) return HookResult.Continue;
-        if (!pawn.Controller.IsValid || pawn.Controller.Value is null) return HookResult.Continue;
-
-        var player = pawn.Controller.Value.As<CCSPlayerController>();
-
-        if (!playerCooldowns.ContainsKey(player))
-            playerCooldowns.Add(player, new List<TeleportPair>());
-
-        if (player.IsBot) return HookResult.Continue;
-
-        if (Teleports.Triggers.TryGetValue(caller, out CEntityInstance? teleport))
-        {
-            var pair = Teleports.teleportPairs.FirstOrDefault(pair => pair.Entry.Entity == teleport || pair.Exit.Entity == teleport);
-
-            if (pair != null && pair.Entry != null && pair.Exit != null)
-            {
-                if (playerCooldowns[player].Contains(pair))
-                    return HookResult.Continue;
-
-                if (teleport.Entity!.Name.StartsWith("teleport_entry"))
-                {
-                    player.PlayerPawn.Value!.Teleport(pair.Exit.Entity.AbsOrigin);
-                }
-
-                playerCooldowns[player].Add(pair);
-
-                AddTimer(0.5f, () => {
-                    if (player != null && player.IsValid)
-                        playerCooldowns[player].Remove(pair);
-                });
-
-            }
-        }
-
-        return HookResult.Continue;
-    }
+    public Dictionary<CTriggerMultiple, Vector> teleportsList = new Dictionary<CTriggerMultiple, Vector>();
 
     private static readonly MemoryFunctionWithReturn<nint, string, int, int> SetBodygroupFunc = new(RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "55 48 89 E5 41 56 49 89 F6 41 55 41 89 D5 41 54 49 89 FC 48 83 EC 08" : "40 53 41 56 41 57 48 81 EC 90 00 00 00 0F 29 74 24 70");
     private static readonly Func<nint, string, int, int> SetBodygroup = SetBodygroupFunc.Invoke;
@@ -102,7 +60,38 @@ public partial class Plugin : BasePlugin, IPluginConfig<Config>
 
     HookResult EventRoundStart(EventRoundStart @event, GameEventInfo info)
     {
-        Teleports.ReplacePortals();
+        var teleports = Utilities.FindAllEntitiesByDesignerName<CTriggerTeleport>("trigger_teleport");
+        var destinations = Utilities.FindAllEntitiesByDesignerName<CBaseEntity>("info_teleport_destination");
+
+        foreach (var teleport in teleports)
+        {
+            var trigger = Utilities.CreateEntityByName<CTriggerMultiple>("trigger_multiple");
+
+            if (trigger != null && trigger.IsValid)
+            {
+                trigger.Entity!.Name = Config.RedactedTeleportName + ';' + teleport.Target;
+                trigger.Spawnflags = 1;
+                trigger.CBodyComponent!.SceneNode!.Owner!.Entity!.Flags &= ~(uint)(1 << 2);
+                trigger.Collision.SolidType = SolidType_t.SOLID_VPHYSICS;
+                trigger.Collision.SolidFlags = 0;
+                trigger.Collision.CollisionGroup = 2;
+                trigger.Collision.CollisionAttribute.CollisionGroup = 2;
+                trigger.SetModel(teleport.CBodyComponent!.SceneNode!.GetSkeletonInstance().ModelState.ModelName);
+                trigger.DispatchSpawn();
+                trigger.Teleport(teleport.AbsOrigin, teleport.AbsRotation);
+                trigger.AcceptInput("Enable");
+
+                foreach (var destination in destinations)
+                {
+                    if (destination.Entity!.Name == teleport.Target)
+                    {
+                        teleportsList.Add(trigger, destination.AbsOrigin!);
+                    }
+                }
+
+                teleport.Remove();
+            }
+        }
 
         RediePlayers.Clear();
 
@@ -138,5 +127,24 @@ public partial class Plugin : BasePlugin, IPluginConfig<Config>
         }
 
         return HookResult.Continue;
+    }
+
+    HookResult TeleportHandler(DynamicHook hook)
+    {
+        var entity = hook.GetParam<CBaseEntity>(1);
+        if (!entity.IsValid || entity.DesignerName != "player") return HookResult.Continue;
+
+        var player = new CCSPlayerController(new CCSPlayerPawn(entity.Handle).Controller.Value!.Handle);
+        var trigger = hook.GetParam<CTriggerMultiple>(0);
+
+        var name = trigger.Entity!.Name.Split(';')[0];
+
+        if (name == Config.RedactedTeleportName)
+        {
+            if (teleportsList.TryGetValue(trigger, out Vector? value)) player.PlayerPawn.Value!.Teleport(value);
+        }
+
+        hook.SetReturn(false);
+        return HookResult.Handled;
     }
 }
