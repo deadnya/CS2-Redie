@@ -2,99 +2,118 @@
 using CounterStrikeSharp.API.Modules.Utils;
 using CounterStrikeSharp.API.Core.Translations;
 using CounterStrikeSharp.API.Modules.Entities.Constants;
+using CounterStrikeSharp.API;
 
-public partial class Plugin : BasePlugin, IPluginConfig<Config>
+namespace Redie
 {
-    public override string ModuleName => "Redie";
-    public override string ModuleVersion => "1.1.0";
-    public override string ModuleAuthor => "deadnya";
-    public override string ModuleDescription => "Redie for Combat Surf";
-
-    public static Plugin Instance { get; set; } = new();
-
-    HashSet<int> RediePlayers = new HashSet<int>();
-
-    public override void Load(bool hotReload)
+    public partial class Plugin : BasePlugin, IPluginConfig<Config>
     {
-        Instance = this;
+        public override string ModuleName => "Redie";
+        public override string ModuleVersion => "1.1.1";
+        public override string ModuleAuthor => "deadnya";
+        public override string ModuleDescription => "Redie for Combat Surf";
 
-        RegisterEvents();
+        private readonly HashSet<int> RediePlayers = [];
 
-        foreach (var cmd in Config.Commands.Split(','))
-            AddCommand(cmd, "Redie Command", (player, command) => Command_Redie(player));
-    }
-
-    public override void Unload(bool hotReload)
-    {
-        UnregisterEvents();
-
-        foreach (var cmd in Config.Commands.Split(','))
-            RemoveCommand(cmd, (player, command) => Command_Redie(player));
-    }
-
-    public Config Config { get; set; } = new Config();
-    public void OnConfigParsed(Config config)
-    {
-        Config = config;
-        Config.Prefix = StringExtensions.ReplaceColorTags(config.Prefix);
-    }
-
-    public void Command_Redie(CCSPlayerController? player)
-    {
-        if (player == null || !player.IsValid || player.PawnIsAlive || player.Team == CsTeam.Spectator || player.Team == CsTeam.None)
-            return;
-
-        var playerPawn = player.PlayerPawn.Value!;
-
-        if (!RediePlayers.Contains(player.Slot))
+        public override void Load(bool hotReload)
         {
-            RediePlayers.Add(player.Slot);
+            RegisterEvents();
 
-            player.Respawn();
-            player.RemoveWeapons();
+            foreach (var cmd in Config.Commands.Split(','))
+                AddCommand(cmd, "Redie Command", (player, command) => CommandRedie(player));
 
-            HidePlayer(player, true);
-
-            playerPawn.Collision.CollisionAttribute.CollisionGroup = (byte)CollisionGroup.COLLISION_GROUP_DISSOLVING; //noblock fix
-            playerPawn.Collision.CollisionGroup = (byte)CollisionGroup.COLLISION_GROUP_DISSOLVING; //noblock fix
-
-            //fix for custom player models
-            //0.2 is for our playermodel color change plugin, feel free to change
-            AddTimer(0.2f, () =>
+            if (hotReload)
             {
-                player.RemoveWeapons();
-                HidePlayer(player, true);
-                
+                LoadReplacedTeleportsFromMap();
 
-                AddTimer(0.0f, () => {
-                    playerPawn.LifeState = (byte)LifeState_t.LIFE_DYING;
-                    playerPawn.Collision.CollisionAttribute.CollisionGroup = (byte)CollisionGroup.COLLISION_GROUP_DISSOLVING;
-                    playerPawn.Collision.CollisionGroup = (byte)CollisionGroup.COLLISION_GROUP_DISSOLVING;
-                });
-            });
+                var players = Utilities.GetPlayers().Where(p => p.Team != CsTeam.None && p.Team != CsTeam.Spectator); ;
 
-            if (Config.Messages)
-                player.PrintToChat($"{Config.Prefix} {Config.Message_Redie}");
+                foreach (var player in players)
+                {
+                    var pawn = player.PlayerPawn.Value;
+                    if (pawn == null) continue;
+
+                    if (pawn.LifeState == (byte)LifeState_t.LIFE_DYING)
+                    {
+                        RediePlayers.Add(player.Slot);
+                    }
+                }
+            }
         }
 
-        else if (RediePlayers.Contains(player.Slot))
+        public override void Unload(bool hotReload)
         {
-            RediePlayers.Remove(player.Slot);
+            UnregisterEvents();
 
-            if (player.PlayerPawn.Value!.TeamNum == (byte)CsTeam.Terrorist)
+            foreach (var cmd in Config.Commands.Split(','))
+                RemoveCommand(cmd, (player, command) => CommandRedie(player));
+        }
+
+        public Config Config { get; set; } = new Config();
+        public void OnConfigParsed(Config config)
+        {
+            Config = config;
+            Config.Prefix = StringExtensions.ReplaceColorTags(config.Prefix);
+        }
+
+        public void CommandRedie(CCSPlayerController? player)
+        {
+            if (player == null || !player.IsValid || player.PawnIsAlive || player.Team == CsTeam.Spectator || player.Team == CsTeam.None) return;
+            if (player.PlayerPawn == null) return;
+
+            var playerPawn = player.PlayerPawn.Value!;
+
+            if (!RediePlayers.Contains(player.Slot))
             {
-                player.ChangeTeam(CsTeam.CounterTerrorist);
-                player.ChangeTeam(CsTeam.Terrorist);
+                RediePlayers.Add(player.Slot);
+
+                player.Respawn();
+                player.RemoveWeapons();
+
+                HidePlayer(player, true);
+
+                playerPawn.Collision.CollisionAttribute.CollisionGroup = (byte)CollisionGroup.COLLISION_GROUP_DISSOLVING; //noblock fix
+                playerPawn.Collision.CollisionGroup = (byte)CollisionGroup.COLLISION_GROUP_DISSOLVING; //noblock fix
+
+                //fix for custom player models
+                //0.2 is for our playermodel color change plugin, feel free to change
+                AddTimer(0.2f, () =>
+                {
+                    player.RemoveWeapons();
+                    HidePlayer(player, true);
+
+
+                    AddTimer(0.0f, () =>
+                    {
+                        playerPawn.LifeState = (byte)LifeState_t.LIFE_DYING;
+                        playerPawn.Collision.CollisionAttribute.CollisionGroup = (byte)CollisionGroup.COLLISION_GROUP_DISSOLVING;
+                        playerPawn.Collision.CollisionGroup = (byte)CollisionGroup.COLLISION_GROUP_DISSOLVING;
+                    });
+                });
+
+                if (Config.SendInfoMessages)
+                    player.PrintToChat($"{Config.Prefix} {Config.Message_Redie}");
             }
 
-            else if (player.PlayerPawn.Value!.TeamNum == (byte)CsTeam.CounterTerrorist)
+            else if (RediePlayers.Contains(player.Slot))
             {
-                player.ChangeTeam(CsTeam.Terrorist);
-                player.ChangeTeam(CsTeam.CounterTerrorist);
-            }
+                RediePlayers.Remove(player.Slot);
 
-            if (Config.Messages)
-                player.PrintToChat($"{Config.Prefix} {Config.Message_UnRedie}");
+                if (player.PlayerPawn.Value!.TeamNum == (byte)CsTeam.Terrorist)
+                {
+                    player.ChangeTeam(CsTeam.CounterTerrorist);
+                    player.ChangeTeam(CsTeam.Terrorist);
+                }
+
+                else if (player.PlayerPawn.Value!.TeamNum == (byte)CsTeam.CounterTerrorist)
+                {
+                    player.ChangeTeam(CsTeam.Terrorist);
+                    player.ChangeTeam(CsTeam.CounterTerrorist);
+                }
+
+                if (Config.SendInfoMessages)
+                    player.PrintToChat($"{Config.Prefix} {Config.Message_UnRedie}");
+            }
         }
     }
 }
