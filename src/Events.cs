@@ -124,6 +124,8 @@ namespace Redie
             var player = new CCSPlayerController(new CCSPlayerPawn(entity.Handle).Controller.Value!.Handle);
             var trigger = hook.GetParam<CTriggerMultiple>(0);
 
+            if (trigger == null || trigger.Entity == null || trigger.Entity.Name == null) return HookResult.Continue;
+
             var name = trigger.Entity!.Name.Split(';')[0];
 
             if (name == Config.RedactedTeleportName)

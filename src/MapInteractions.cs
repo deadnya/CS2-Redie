@@ -12,7 +12,7 @@ namespace Redie
 
             foreach (var trigger in triggers)
             {
-                if (trigger.Entity == null) continue;
+                if (trigger == null || trigger.Entity == null || trigger.Entity.Name == null) continue;
 
                 var teleportData = trigger.Entity.Name.Split(Config.RedactedTeleportNameSeparator);
 
@@ -35,7 +35,6 @@ namespace Redie
         private void ReplaceMapTeleports()
         {
             teleportsList.Clear();
-
             var teleports = Utilities.FindAllEntitiesByDesignerName<CTriggerTeleport>("trigger_teleport");
             var destinations = Utilities.FindAllEntitiesByDesignerName<CBaseEntity>("info_teleport_destination");
 
