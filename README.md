@@ -6,12 +6,11 @@
 ### List of changes:
 - Allows ghosts to use map teleports (replaced all trigger_teleport with trigger_multiple 💀💀💀)
 - Exiting redie silently removes player instead of suiciding (just quick team rejoin)
+- Ghosts don't take damage from players
 
 ### To do:
-- Remove Ghosts' damage taking
 - Add noclip command for ghosts
 - Add savepos/loadpos for ghosts
-- Add hotreload compatibility
 
 <br>
 
@@ -32,7 +31,7 @@
 > 
 >player in redie can pickup defuse kits
 >
->player in redie can do various niche things like opening ski_3's jail
+>player in redie can activate triggers and hold doors (e.g. ski_3 jail cube, 4fun jail door, etc)
 
 this plugin is still bad but it gets the job done lol
 
