@@ -10,9 +10,9 @@ namespace Redie
     public partial class Plugin : BasePlugin, IPluginConfig<Config>
     {
         public override string ModuleName => "Redie";
-        public override string ModuleVersion => "1.2.0";
+        public override string ModuleVersion => "1.2.1";
         public override string ModuleAuthor => "deadnya";
-        public override string ModuleDescription => "Redie for Combat Surf";
+        public override string ModuleDescription => "Redie for Surf";
 
         private readonly HashSet<int> RediePlayers = [];
 
@@ -84,26 +84,16 @@ namespace Redie
 
                 player.Respawn();
                 player.RemoveWeapons();
-
                 HidePlayer(player, true);
 
-                playerPawn.Collision.CollisionAttribute.CollisionGroup = (byte)CollisionGroup.COLLISION_GROUP_DISSOLVING; //noblock fix
-                playerPawn.Collision.CollisionGroup = (byte)CollisionGroup.COLLISION_GROUP_DISSOLVING; //noblock fix
-
-                //fix for custom player models
-                //0.2 is for our playermodel color change plugin, feel free to change
-                AddTimer(0.2f, () =>
+                AddTimer(Config.RedieDelay, () =>
                 {
                     player.RemoveWeapons();
+                    playerPawn.LifeState = (byte)LifeState_t.LIFE_DYING;
+                    playerPawn.Collision.CollisionAttribute.CollisionGroup = (byte)CollisionGroup.COLLISION_GROUP_DISSOLVING;
+                    playerPawn.Collision.CollisionGroup = (byte)CollisionGroup.COLLISION_GROUP_DISSOLVING;
+
                     HidePlayer(player, true);
-
-
-                    AddTimer(0.0f, () =>
-                    {
-                        playerPawn.LifeState = (byte)LifeState_t.LIFE_DYING;
-                        playerPawn.Collision.CollisionAttribute.CollisionGroup = (byte)CollisionGroup.COLLISION_GROUP_DISSOLVING;
-                        playerPawn.Collision.CollisionGroup = (byte)CollisionGroup.COLLISION_GROUP_DISSOLVING;
-                    });
                 });
 
                 if (Config.SendInfoMessages)
@@ -141,7 +131,7 @@ namespace Redie
             if (pawn.MoveType == MoveType_t.MOVETYPE_WALK)
             {
                 pawn.MoveType = MoveType_t.MOVETYPE_NOCLIP;
-                Schema.SetSchemaValue(pawn.Handle, "CBaseEntity", "m_nActualMoveType", 8);
+                Schema.SetSchemaValue(pawn.Handle, "CBaseEntity", "m_nActualMoveType", MoveType_t.MOVETYPE_NOCLIP);
                 Utilities.SetStateChanged(pawn, "CBaseEntity", "m_MoveType");
 
                 if (Config.SendInfoMessages)
@@ -150,7 +140,7 @@ namespace Redie
             else
             {
                 pawn.MoveType = MoveType_t.MOVETYPE_WALK;
-                Schema.SetSchemaValue(pawn.Handle, "CBaseEntity", "m_nActualMoveType", 2);
+                Schema.SetSchemaValue(pawn.Handle, "CBaseEntity", "m_nActualMoveType", MoveType_t.MOVETYPE_WALK);
                 Utilities.SetStateChanged(pawn, "CBaseEntity", "m_MoveType");
 
                 if (Config.SendInfoMessages)

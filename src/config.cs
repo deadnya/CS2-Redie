@@ -26,6 +26,7 @@ namespace Redie
         public string Message_LoadPos { get; set; } = "Position loaded";
         public string Message_LoadPosError { get; set; } = "No saved position detected!";
 
+        public float RedieDelay { get; set; } = 0.2f; //Seems like with this it works more stable
         public string RedactedTeleportName { get; private set; } = "redactedtpto"; //stored as redactedtpto{sep}target
         public string RedactedTeleportNameSeparator { get; private set; } = ";";
     }
