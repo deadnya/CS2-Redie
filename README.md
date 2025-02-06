@@ -1,16 +1,16 @@
 # cs2-redie
 **A plugin that allows players to go in Redie/Ghost mode**
 
-**This version is based on [excludera](https://github.com/exkludera)'s [redie](https://github.com/exkludera/cs2-redie) and [teleports](https://github.com/exkludera/cs2-teleports) plugins. Its currently used on CS2 Combat Surf server (62.122.214.145:27015)**
+**This version is based on [excludera](https://github.com/exkludera)'s [redie](https://github.com/exkludera/cs2-redie) plugin. Its currently used on CS2 Combat Surf server (62.122.214.145:27015)**
 
 ### List of changes:
 - Allows ghosts to use map teleports (replaced all trigger_teleport with trigger_multiple 💀💀💀)
 - Exiting redie silently removes player instead of suiciding (just quick team rejoin)
 - Ghosts don't take damage from players
+- Added noclip and save/load pos for ghosts
 
 ### To do:
-- Add noclip command for ghosts
-- Add savepos/loadpos for ghosts
+- Prob disable steps sounds someday
 
 <br>
 
@@ -20,7 +20,13 @@
 - [MetaMod](https://github.com/alliedmodders/metamod-source)
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp)
 
-`css_redie` / `css_ghost`
+
+### Commands
+- `css_redie` / `css_ghost` - Toggle ghost mode
+- `css_redienoclip` - Toggle noclip
+- `css_rediesavepos` - Save current position
+- `css_redieloadpos` - Load saved position
+- `css_rediehelp` - Get list of available commands
 
 <br>
 
