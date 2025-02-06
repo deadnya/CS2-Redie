@@ -1,13 +1,13 @@
-# cs2-redie
+# Redie for Surf
 **A plugin that allows players to go in Redie/Ghost mode**
 
-**This version is based on [excludera](https://github.com/exkludera)'s [redie](https://github.com/exkludera/cs2-redie) plugin. Its currently used on CS2 Combat Surf server (62.122.214.145:27015)**
+**This version is based on [exkludera](https://github.com/exkludera)'s [redie](https://github.com/exkludera/cs2-redie) plugin. Its currently used on CS2 Combat Surf server (62.122.214.145:27015)**
 
 ### List of changes:
-- Allows ghosts to use map teleports (replaced all trigger_teleport with trigger_multiple 💀💀💀)
-- Exiting redie silently removes player instead of suiciding (just quick team rejoin)
+- Working teleports (!!!) (replaced all trigger_teleport with trigger_multiple 💀💀💀)
+- Silent unredie (just quick team rejoin)
 - Ghosts don't take damage from players
-- Added noclip and save/load pos for ghosts
+- Noclip and save/load pos commands for ghosts
 
 ### To do:
 - Prob disable steps sounds someday
@@ -37,8 +37,6 @@
 > 
 >player in redie can pickup defuse kits
 >
->player in redie can activate triggers and hold doors (e.g. ski_3 jail cube, 4fun jail door, etc)
+>player in redie can activate some triggers and hold doors (e.g. surf_ski_3 jail cube, surf_4fun jail door, etc)
 
 this plugin is still bad but it gets the job done lol
-
-<br>
