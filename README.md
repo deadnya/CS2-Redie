@@ -14,9 +14,9 @@
 
 <br>
 
-## information:
+## Information:
 
-### requirements
+### Requirements
 - [MetaMod](https://github.com/alliedmodders/metamod-source)
 - [CounterStrikeSharp](https://github.com/roflmuffin/CounterStrikeSharp)
 
