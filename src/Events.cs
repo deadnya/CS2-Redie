@@ -2,6 +2,7 @@
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Modules.Memory;
 using CounterStrikeSharp.API.Modules.Memory.DynamicFunctions;
+using CounterStrikeSharp.API.Modules.UserMessages;
 using CounterStrikeSharp.API.Modules.Utils;
 using System.Drawing;
 
@@ -19,6 +20,8 @@ namespace Redie
             VirtualFunctions.CCSPlayer_WeaponServices_CanUseFunc.Hook(OnCanUse, HookMode.Pre);
             VirtualFunctions.CBaseTrigger_StartTouchFunc.Hook(OnTriggerStartTouch, HookMode.Pre);
             VirtualFunctions.CBaseEntity_TakeDamageOldFunc.Hook(OnTakeDamage, HookMode.Pre);
+
+            HookUserMessage(208, CMsgSosStartSoundEvent, HookMode.Pre);
         }
 
         private void UnregisterEvents()
@@ -31,6 +34,8 @@ namespace Redie
             VirtualFunctions.CCSPlayer_WeaponServices_CanUseFunc.Unhook(OnCanUse, HookMode.Pre);
             VirtualFunctions.CBaseTrigger_StartTouchFunc.Unhook(OnTriggerStartTouch, HookMode.Pre);
             VirtualFunctions.CBaseEntity_TakeDamageOldFunc.Unhook(OnTakeDamage, HookMode.Pre);
+
+            UnhookUserMessage(208, CMsgSosStartSoundEvent, HookMode.Pre);
         }
 
         private readonly Dictionary<CTriggerMultiple, Vector> teleportsList = [];
@@ -144,6 +149,36 @@ namespace Redie
 
             hook.SetReturn(false);
             return HookResult.Handled;
+        }
+
+        HookResult CMsgSosStartSoundEvent(UserMessage um)
+        {
+            int entIndex = um.ReadInt("source_entity_index");
+
+            var entHandle = NativeAPI.GetEntityFromIndex(entIndex);
+
+            var pPawn = new CBasePlayerPawn(entHandle);
+            if (pPawn == null || !pPawn.IsValid) return HookResult.Continue;
+
+            var pController = pPawn.Controller?.Value?.As<CCSPlayerController>();
+            if (pController == null || !pController.IsValid) return HookResult.Continue;
+
+            if (RediePlayers.Contains(pController.Slot))
+            {
+                var players = Utilities.GetPlayers();
+                foreach (var player in players)
+                {
+                    if (!player.IsValid || player.Connected != PlayerConnectedState.PlayerConnected)
+                        continue;
+
+                    if (player.Slot == pController.Slot)
+                        continue;
+
+                    _ = um.Recipients.Remove(player);
+                }
+            }
+
+            return HookResult.Continue;
         }
     }
 }

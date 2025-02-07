@@ -10,7 +10,7 @@ namespace Redie
     public partial class Plugin : BasePlugin, IPluginConfig<Config>
     {
         public override string ModuleName => "Redie";
-        public override string ModuleVersion => "1.2.1";
+        public override string ModuleVersion => "1.3.0";
         public override string ModuleAuthor => "deadnya";
         public override string ModuleDescription => "Redie for Surf";
 
