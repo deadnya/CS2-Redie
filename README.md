@@ -7,11 +7,13 @@
 - Working teleports (!!!) (replaced all trigger_teleport with trigger_multiple 💀💀💀)
 - Silent unredie (just quick team rejoin)
 - Ghosts don't take damage from players
+- Ghosts don't make step sounds (by [RoxyRekt](https://github.com/roxyrekt))
 - Noclip and save/load pos commands for ghosts
 
 ### To do:
-- Prob disable steps sounds someday
+- Fix doors and defuse kits
 
+(wow it might be viable for other gamemodes later i think)
 <br>
 
 ## Information:
@@ -31,8 +33,6 @@
 <br>
 
 > [!CAUTION]
->player in redie still makes walking/jumping sounds (would be nice if anyone knows how to fix that)
->
 > behaviour with tp entities other than teleport_trigger and info_teleport_destination was not tested and may result in unexpected stuff
 > 
 >player in redie can pickup defuse kits
@@ -40,3 +40,4 @@
 >player in redie can activate some triggers and hold doors (e.g. surf_ski_3 jail cube, surf_4fun jail door, etc)
 
 this plugin is still bad but it gets the job done lol
+and its getting good!
