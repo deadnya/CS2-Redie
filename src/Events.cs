@@ -48,6 +48,37 @@ namespace Redie
             Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
         }
 
+        HookResult CMsgSosStartSoundEvent(UserMessage um)
+        {
+            int entIndex = um.ReadInt("source_entity_index");
+
+            var entHandle = NativeAPI.GetEntityFromIndex(entIndex);
+
+            var pPawn = new CBasePlayerPawn(entHandle);
+            if (pPawn == null || !pPawn.IsValid) return HookResult.Continue;
+
+            var pController = pPawn.Controller?.Value?.As<CCSPlayerController>();
+            if (pController == null || !pController.IsValid) return HookResult.Continue;
+
+            if (RediePlayers.Contains(pController.Slot))
+            {
+                var players = Utilities.GetPlayers();
+                foreach (var player in players)
+                {
+                    if (!player.IsValid || player.Connected != PlayerConnectedState.PlayerConnected)
+                        continue;
+
+                    if (player.Slot == pController.Slot)
+                        continue;
+
+                    _ = um.Recipients.Remove(player);
+                }
+            }
+
+            return HookResult.Continue;
+        }
+
+
         HookResult OnEventPlayerSpawn(EventPlayerSpawn @event, GameEventInfo info)
         {
             var player = @event.Userid;
@@ -142,7 +173,7 @@ namespace Redie
             if (pawn.Controller == null) return HookResult.Continue;
             if (pawn.Controller.Value == null) return HookResult.Continue;
             var player = pawn?.Controller.Value?.As<CCSPlayerController>();
-            
+
             if (player == null) return HookResult.Continue;
             if (pawn == null) return HookResult.Continue;
             if (!RediePlayers.Contains(player.Slot)) return HookResult.Continue;
