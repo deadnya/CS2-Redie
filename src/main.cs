@@ -86,6 +86,11 @@ namespace Redie
                 player.RemoveWeapons();
                 HidePlayer(player, true);
 
+                AddTimer(0.2f, () =>
+                {
+                    player.RemoveWeapons(); //might fix an issue with guns idk
+                });
+
                 AddTimer(Config.RedieDelay, () =>
                 {
                     player.RemoveWeapons();

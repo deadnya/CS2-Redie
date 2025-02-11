@@ -5,6 +5,7 @@ using CounterStrikeSharp.API.Modules.Memory.DynamicFunctions;
 using CounterStrikeSharp.API.Modules.UserMessages;
 using CounterStrikeSharp.API.Modules.Utils;
 using System.Drawing;
+using System.Linq;
 
 namespace Redie
 {
@@ -22,6 +23,9 @@ namespace Redie
             VirtualFunctions.CBaseEntity_TakeDamageOldFunc.Hook(OnTakeDamage, HookMode.Pre);
 
             HookUserMessage(208, CMsgSosStartSoundEvent, HookMode.Pre);
+
+            HookEntityOutput("func_button", "OnIn", OnButtonUse);
+            HookEntityOutput("func_button", "OnOut", OnButtonUse);
         }
 
         private void UnregisterEvents()
@@ -36,6 +40,9 @@ namespace Redie
             VirtualFunctions.CBaseEntity_TakeDamageOldFunc.Unhook(OnTakeDamage, HookMode.Pre);
 
             UnhookUserMessage(208, CMsgSosStartSoundEvent, HookMode.Pre);
+
+            UnhookEntityOutput("func_button", "OnIn", OnButtonUse);
+            UnhookEntityOutput("func_button", "OnOut", OnButtonUse);
         }
 
         private readonly Dictionary<CTriggerMultiple, Vector> teleportsList = [];
@@ -48,18 +55,29 @@ namespace Redie
             Utilities.SetStateChanged(pawn, "CBaseModelEntity", "m_clrRender");
         }
 
+        HookResult OnButtonUse(CEntityIOOutput output, string name, CEntityInstance activator, CEntityInstance caller, CVariant value, float delay)
+        {
+            if (activator.DesignerName != "player") return HookResult.Continue;
+            var pawn = activator.EntityHandle.Value!.As<CCSPlayerPawn>();
+            if (pawn == null || !pawn.IsValid) return HookResult.Continue;
+            var baseController = pawn.Controller.Value;
+            if (baseController == null || !baseController.IsValid) return HookResult.Continue;
+            var controller = baseController.As<CCSPlayerController>();
+            if (controller == null || !controller.IsValid) return HookResult.Continue;
+
+            if (!RediePlayers.Contains(controller.Slot)) return HookResult.Continue;
+
+            return HookResult.Handled;
+        }
+
         HookResult CMsgSosStartSoundEvent(UserMessage um)
         {
             int entIndex = um.ReadInt("source_entity_index");
-
             var entHandle = NativeAPI.GetEntityFromIndex(entIndex);
-
             var pPawn = new CBasePlayerPawn(entHandle);
-            if (pPawn == null || !pPawn.IsValid) return HookResult.Continue;
-
+            if (pPawn == null || !pPawn.IsValid || pPawn.DesignerName != "player") return HookResult.Continue;
             var pController = pPawn.Controller?.Value?.As<CCSPlayerController>();
             if (pController == null || !pController.IsValid) return HookResult.Continue;
-
             if (RediePlayers.Contains(pController.Slot))
             {
                 var players = Utilities.GetPlayers();
@@ -180,36 +198,6 @@ namespace Redie
 
             hook.SetReturn(false);
             return HookResult.Handled;
-        }
-
-        HookResult CMsgSosStartSoundEvent(UserMessage um)
-        {
-            int entIndex = um.ReadInt("source_entity_index");
-
-            var entHandle = NativeAPI.GetEntityFromIndex(entIndex);
-
-            var pPawn = new CBasePlayerPawn(entHandle);
-            if (pPawn == null || !pPawn.IsValid) return HookResult.Continue;
-
-            var pController = pPawn.Controller?.Value?.As<CCSPlayerController>();
-            if (pController == null || !pController.IsValid) return HookResult.Continue;
-
-            if (RediePlayers.Contains(pController.Slot))
-            {
-                var players = Utilities.GetPlayers();
-                foreach (var player in players)
-                {
-                    if (!player.IsValid || player.Connected != PlayerConnectedState.PlayerConnected)
-                        continue;
-
-                    if (player.Slot == pController.Slot)
-                        continue;
-
-                    _ = um.Recipients.Remove(player);
-                }
-            }
-
-            return HookResult.Continue;
         }
     }
 }
